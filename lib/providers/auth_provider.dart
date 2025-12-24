@@ -112,7 +112,6 @@ class AuthProvider extends ChangeNotifier {
       await _firestore.collection('users').doc(uid).set({
         'name': name,
         'email': email,
-        'password': password,
         'cereatedAt': Timestamp.now(),
       });
 

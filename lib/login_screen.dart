@@ -4,15 +4,19 @@ import 'package:provider/provider.dart';
 import 'package:quick_notes/providers/auth_provider.dart';
 
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final log = Provider.of<AuthProvider>(context);
     final email = TextEditingController();
     final password = TextEditingController();
-    bool loading = false;
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -66,28 +70,9 @@ class LoginScreen extends StatelessWidget {
                   }
                 },
                 child: const Text('Save'),
-              )
-              ,
+              ),
 
 
-              // child: ElevatedButton(onPressed: (){}, child:Text('Login')),
-              // child: ElevatedButton(
-              //   onPressed:loading
-              //     ? null :() async {
-              //     setState(() => loading = true);
-              //     String ? error = await log.login(
-              //         email.text.trim(),
-              //         password.text.trim()
-              //     );
-              //     setState(() => loading = false);
-              //     if(error != null){
-              //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
-              //     }else{
-              //       Navigator.pushReplacementNamed(context, '/home');
-              //     }
-              //   },
-              //   child:  Text(loading ? 'Logging in...' : 'Login'),
-              // ),
             ),
             TextButton(
               onPressed: () {
