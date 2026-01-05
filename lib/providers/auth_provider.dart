@@ -169,8 +169,46 @@ class AuthProvider extends ChangeNotifier {
     setLoading(false);
     notifyListeners();
   }
+  //to delete the user
+  Future<void>deleteUser(String docID)async{
+    await firestore
+        .collection('users')
+        .doc(docID)
+        .delete();
+    details.removeWhere((item) => item.id == docID);
+    notifyListeners();
+  }
 
+// to update
+  Future<void> updateUser(String docID, String name, String password) async {
+    await firestore.collection('users').doc(docID).update({
+      'name': name,
+      // 'password': password,
+    });
 
+    final index = details.indexWhere((item) => item.id == docID);
+
+    if (index != -1) {
+      final old = details[index];
+      details[index] = DetailsDoc(
+        id: old.id,
+        name: name,
+        email: old.email,
+        createdAt: old.createdAt,
+      );
+    }
+
+    notifyListeners();
+  }
+  String? editingUserId;
+  void setUserForUpdate(DetailsDoc user) {
+    editingUserId = user.id;
+    nameController.text = user.name;
+    emailController.text = user.email;
+
+    passwordController.clear();
+    confirmPasswordController.clear();
+  }
 
   @override
   void dispose() {
