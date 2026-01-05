@@ -1,22 +1,15 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quick_notes/providers/auth_provider.dart';
 
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  @override
   Widget build(BuildContext context) {
-    final log = Provider.of<AuthProvider>(context);
-    final email = TextEditingController();
-    final password = TextEditingController();
+    final log = context.watch<AuthProvider>();
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -28,8 +21,9 @@ class _LoginScreenState extends State<LoginScreen> {
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 32),
+
             TextField(
-              controller: email,
+              controller: log.loginEmailController,
               decoration: InputDecoration(
                 labelText: 'Email',
                 border: OutlineInputBorder(
@@ -37,9 +31,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+
             const SizedBox(height: 16),
+
             TextField(
-              controller: password,
+              controller: log.loginPasswordController,
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Password',
@@ -48,32 +44,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+
             const SizedBox(height: 24),
+
             SizedBox(
               width: double.infinity,
               height: 48,
-
-              child: ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await FirebaseFirestore.instance
-                        .collection('crtr')
-                        .add({
-                      'name': 'Mishaba',
-                      'email': 'mishaba@gmail.com',
-                      'phone': '9876543210',
-                      'createdAt': Timestamp.now(),
-                    });
-                    print(' saved');
-                  } catch (e) {
-                    print('$e');
-                  }
-                },
-                child: const Text('Save'),
-              ),
-
-
+              child: ElevatedButton(onPressed: (){}, child: Text('login'))
             ),
+
             TextButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/register');

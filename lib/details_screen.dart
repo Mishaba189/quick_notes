@@ -1,76 +1,80 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
-class DetailsScreen extends StatefulWidget {
+
+class DetailsScreen extends StatelessWidget {
   const DetailsScreen({super.key});
 
   @override
-  State<DetailsScreen> createState() => _DetailsScreenState();
-}
-
-class _DetailsScreenState extends State<DetailsScreen> {
-  final TextEditingController username = TextEditingController();
-
-  @override
   Widget build(BuildContext context) {
-    final details = Provider.of<AuthProvider>(context,listen: false);
+    // Future.microtask(() {
+    //   context.read<AuthProvider>().fetchDetails();
+    // });
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Details'),
+        appBar: AppBar(
+        leading: IconButton(onPressed: (){
+          Navigator.pushReplacementNamed(context, '/register');
+        },
+            icon:Icon(Icons.arrow_back,size: 25,),),
+        title: Text('Users'),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
+      body: SingleChildScrollView(
+        child: Padding(padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: username,
-              decoration: const InputDecoration(
-                labelText: 'Enter username',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                await details.fetchByName(username.text.toLowerCase());
-                if (details.userData == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('User not found')),
-                  );
-                }
-              },
-              child: const Text('Fetch'),
-            ),
-            const SizedBox(height: 24),
-            Consumer<AuthProvider>(
-              builder: (context,details,child) {
-                final user = details.userData;
-                if (user == null) {
-                  return const Text('No user data');
-                }
-                return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Name: ${user['name']}',
-                            style: const TextStyle(fontSize: 20)
-                        ),
-                        const SizedBox(height: 16),
-                        Text('Email: ${user['email']}',
-                            style: const TextStyle(fontSize: 20)),
-                        const SizedBox(height: 16),
-                        Text('Created At: ${user['cereatedAt'].toDate()}',
-                            style: const TextStyle(fontSize: 20)),
-                      ],
+            SizedBox(
+              height: 900,
+              child: Consumer<AuthProvider>(
+                builder: (context,authProvider,child) {
+                  return ListView.builder(
+                    itemCount: authProvider.details.length,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemBuilder: (context,index){
+                      final detail = authProvider.details[index];
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Container(
+                          decoration: BoxDecoration(
+                                      border: Border.all(color: Color(0x6908080B)),
+                                      borderRadius: BorderRadius.circular(16)
+                                    ),
+                          child: ListTile(
+                            title: Text(detail.id),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(detail.name),
+                                Text(detail.email),
+                              ],
+                            ),
+                          ),
+
+
+                      ),
                     );
-              }
+                  });
+                }
+              ),
             )
           ],
         ),
+        ),
+      ),
+        floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/register');
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
 }
+
+
+
 

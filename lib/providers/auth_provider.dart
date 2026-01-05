@@ -2,16 +2,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  // controllers
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+  final loginEmailController = TextEditingController();
+  final loginPasswordController = TextEditingController();
+
   String? passwordError;
   String? emailError;
   String? nameError;
   String? confirmPasswordError;
   bool loading = false;
 
-  Map<String, dynamic>? userData; // store fetched user info
+  // validation
 
-  // password check
   void checkPassword(String password) {
     if (password.isEmpty) {
       passwordError = 'Password is required';
@@ -23,11 +31,10 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // confirm password
-  void checkConfirmPassword(String confirmPassword, String password) {
+  void checkConfirmPassword(String confirmPassword) {
     if (confirmPassword.isEmpty) {
       confirmPasswordError = 'Please confirm your password';
-    } else if (confirmPassword != password) {
+    } else if (confirmPassword != passwordController.text) {
       confirmPasswordError = 'Passwords do not match';
     } else {
       confirmPasswordError = null;
@@ -35,11 +42,10 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // email check
   void checkEmail(String email) {
     if (email.isEmpty) {
       emailError = 'Email is required';
-    } else if (!email.contains('@') || !email.contains('.com')) {
+    } else if (!email.contains('@') || !email.contains('.')) {
       emailError = 'Invalid email';
     } else {
       emailError = null;
@@ -47,7 +53,6 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // name check
   void validateName(String name) {
     if (name.isEmpty) {
       nameError = 'Name is required';
@@ -58,94 +63,132 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> checkNameExists(String name) async {
-    final query = await _firestore
+    final query = await firestore
         .collection('users')
         .where('name', isEqualTo: name)
         .limit(1)
         .get();
 
-    if (query.docs.isNotEmpty) {
-      nameError = 'Please write a different name';
-    } else {
-      nameError = null;
-    }
+    nameError = query.docs.isNotEmpty
+        ? 'Please write a different name'
+        : null;
+
     notifyListeners();
   }
 
-  // Clear fields
-  void clearErrors() {
-    emailError = null;
-    passwordError = null;
-    nameError = null;
-    notifyListeners();
-  }
+  // register
 
-  //loading
-
-  void setLoading(bool value){
-    loading = value;
-    notifyListeners();
-  }
-
-  // Register user
-  Future<String> register({
-    required String name,
-    required String email,
-    required String password,
-  }) async {
+  Future<void> register() async {
     try {
-      // Check if email already exists
-      final query = await _firestore
+      setLoading(true);
+
+      final email = emailController.text.trim();
+      final name = nameController.text.trim();
+      final query = await firestore
           .collection('users')
           .where('email', isEqualTo: email)
           .limit(1)
           .get();
+
       if (query.docs.isNotEmpty) {
         throw Exception('Email already registered');
       }
-      setLoading(true);
 
-      // create UID
-      String uid = '${DateTime.now().millisecondsSinceEpoch}';
+      final uid = DateTime.now().millisecondsSinceEpoch.toString();
 
-      // Register with uid
-      await _firestore.collection('users').doc(uid).set({
+      await firestore.collection('users').doc(uid).set({
         'name': name,
         'email': email,
-        'cereatedAt': Timestamp.now(),
+        'createdAt': Timestamp.now(),
       });
 
-      return uid;
-    } catch (e) {
-      debugPrint('$e');
-      rethrow;
-    }finally{
+      clearAll();
+    } finally {
       setLoading(false);
     }
   }
 
-  // Fetch user by name
-  Future<void> fetchByName(String name) async {
-    try {
-      final query = await _firestore
-          .collection('users')
-          .where('name', isEqualTo: name.trim().toLowerCase())
-          .limit(1)
-          .get();
-
-      if (query.docs.isNotEmpty) {
-        final doc = query.docs.first;
-        userData = doc.data();
-      } else {
-        userData = null;
-      }
-      notifyListeners();
-    } catch (e) {
-      debugPrint('$e');
-    }
+  void setLoading(bool value) {
+    loading = value;
+    notifyListeners();
   }
 
+  void clearAll() {
+    nameController.clear();
+    emailController.clear();
+    passwordController.clear();
+    confirmPasswordController.clear();
+    passwordError = null;
+    emailError = null;
+    nameError = null;
+    confirmPasswordError = null;
+    notifyListeners();
+  }
+
+  //fetching
+  List<DetailsDoc> details = [];
+
+  AuthProvider(){
+    // fetchDetails();
+  }
+
+  Future<void> fetchDetails() async {
+
+    loading = true;
+    notifyListeners();
+
+    try {
+      final snapshot = await firestore
+          .collection('users')
+          .orderBy('createdAt', descending: true)
+          .get();
+
+
+
+      details = snapshot.docs
+          .map((doc) => DetailsDoc.fromFirestore(doc))
+          .toList();
+
+    } catch (e) {
+      debugPrint('error when fetching: $e');
+    }
+
+    loading = false;
+    notifyListeners();
+  }
+
+
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
 }
 
+class DetailsDoc {
+  final String id;
+  final String name;
+  final String email;
+  final Timestamp createdAt;
 
+  DetailsDoc({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.createdAt
+  });
+  factory DetailsDoc.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
 
+    return DetailsDoc(
+      id: doc.id,
+      name: data['name'],
+      email: data['email'],
+      createdAt: data['createdAt'],
+    );
+  }
+}
