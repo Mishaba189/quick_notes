@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -9,6 +8,7 @@ class DetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final h = MediaQuery.of(context).size.height;
     // Future.microtask(() {
     //   context.read<AuthProvider>().fetchDetails();
     // });
@@ -27,9 +27,17 @@ class DetailsScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              height: 900,
+              height: h,
               child: Consumer<AuthProvider>(
                 builder: (context,authProvider,child) {
+                  if(authProvider.loading== true){
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  if(authProvider.details.isEmpty){
+                     return Center(child: Text("No User Found",style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,)));
+                  }
                   return ListView.builder(
                     itemCount: authProvider.details.length,
                       shrinkWrap: true,

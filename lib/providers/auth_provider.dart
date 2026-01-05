@@ -84,6 +84,8 @@ class AuthProvider extends ChangeNotifier {
 
       final email = emailController.text.trim();
       final name = nameController.text.trim();
+
+     //email
       final query = await firestore
           .collection('users')
           .where('email', isEqualTo: email)
@@ -94,19 +96,35 @@ class AuthProvider extends ChangeNotifier {
         throw Exception('Email already registered');
       }
 
+      //  uid
       final uid = DateTime.now().millisecondsSinceEpoch.toString();
+      final createdAt = Timestamp.now();
+
 
       await firestore.collection('users').doc(uid).set({
         'name': name,
         'email': email,
-        'createdAt': Timestamp.now(),
+        'createdAt': createdAt,
       });
 
+      final user = DetailsDoc(
+        id: uid,
+        name: name,
+        email: email,
+        createdAt: createdAt,
+      );
+
+      details.insert(0, user);
+      notifyListeners();
+
       clearAll();
+    } catch (e) {
+      debugPrint('Register error: $e');
     } finally {
       setLoading(false);
     }
   }
+
 
   void setLoading(bool value) {
     loading = value;
@@ -128,13 +146,9 @@ class AuthProvider extends ChangeNotifier {
   //fetching
   List<DetailsDoc> details = [];
 
-  AuthProvider(){
-    // fetchDetails();
-  }
-
   Future<void> fetchDetails() async {
 
-    loading = true;
+    setLoading(true);
     notifyListeners();
 
     try {
@@ -152,8 +166,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('error when fetching: $e');
     }
-
-    loading = false;
+    setLoading(false);
     notifyListeners();
   }
 
