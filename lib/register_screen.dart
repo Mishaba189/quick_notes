@@ -11,11 +11,11 @@ class RegisterScreen extends StatelessWidget {
     final disabled =
         reg.nameController.text.trim().isEmpty ||
             reg.emailController.text.trim().isEmpty ||
-            reg.passwordController.text.trim().isEmpty ||
+            // reg.passwordController.text.trim().isEmpty ||
             reg.nameError != null ||
             reg.emailError != null ||
-            reg.passwordError != null ||
-            reg.confirmPasswordError != null ||
+            // reg.passwordError != null ||
+            // reg.confirmPasswordError != null ||
             reg.loading;
 
     return Scaffold(
@@ -59,35 +59,35 @@ class RegisterScreen extends StatelessWidget {
               onChanged: reg.checkEmail,
             ),
 
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: reg.passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                errorText: reg.passwordError,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: reg.checkPassword,
-            ),
-
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: reg.confirmPasswordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Confirm Password',
-                errorText: reg.confirmPasswordError,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: reg.checkConfirmPassword,
-            ),
+            // const SizedBox(height: 16),
+            //
+            // TextField(
+            //   controller: reg.passwordController,
+            //   obscureText: true,
+            //   decoration: InputDecoration(
+            //     labelText: 'Password',
+            //     errorText: reg.passwordError,
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(12),
+            //     ),
+            //   ),
+            //   onChanged: reg.checkPassword,
+            // ),
+            //
+            // const SizedBox(height: 16),
+            //
+            // TextField(
+            //   controller: reg.confirmPasswordController,
+            //   obscureText: true,
+            //   decoration: InputDecoration(
+            //     labelText: 'Confirm Password',
+            //     errorText: reg.confirmPasswordError,
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(12),
+            //     ),
+            //   ),
+            //   onChanged: reg.checkConfirmPassword,
+            // ),
 
             const SizedBox(height: 24),
 
@@ -104,7 +104,7 @@ class RegisterScreen extends StatelessWidget {
                       const SnackBar(
                           content: Text('Registration successful')),
                     );
-                    Navigator.pushNamed(context, '/details');
+                    Navigator.pushNamed(context, '/home');
                   } catch (_) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

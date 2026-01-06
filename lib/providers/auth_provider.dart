@@ -10,7 +10,7 @@ class AuthProvider extends ChangeNotifier {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final loginEmailController = TextEditingController();
-  final loginPasswordController = TextEditingController();
+  final loginNameController = TextEditingController();
 
   String? passwordError;
   String? emailError;
@@ -19,28 +19,6 @@ class AuthProvider extends ChangeNotifier {
   bool loading = false;
 
   // validation
-
-  void checkPassword(String password) {
-    if (password.isEmpty) {
-      passwordError = 'Password is required';
-    } else if (password.length < 8) {
-      passwordError = 'Password must be at least 8 characters';
-    } else {
-      passwordError = null;
-    }
-    notifyListeners();
-  }
-
-  void checkConfirmPassword(String confirmPassword) {
-    if (confirmPassword.isEmpty) {
-      confirmPasswordError = 'Please confirm your password';
-    } else if (confirmPassword != passwordController.text) {
-      confirmPasswordError = 'Passwords do not match';
-    } else {
-      confirmPasswordError = null;
-    }
-    notifyListeners();
-  }
 
   void checkEmail(String email) {
     if (email.isEmpty) {
@@ -52,6 +30,28 @@ class AuthProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  // void checkPassword(String password) {
+  //   if (password.isEmpty) {
+  //     passwordError = 'Password is required';
+  //   } else if (password.length < 8) {
+  //     passwordError = 'Password must be at least 8 characters';
+  //   } else {
+  //     passwordError = null;
+  //   }
+  //   notifyListeners();
+  // }
+  //
+  // void checkConfirmPassword(String confirmPassword) {
+  //   if (confirmPassword.isEmpty) {
+  //     confirmPasswordError = 'Please confirm your password';
+  //   } else if (confirmPassword != passwordController.text) {
+  //     confirmPasswordError = 'Passwords do not match';
+  //   } else {
+  //     confirmPasswordError = null;
+  //   }
+  //   notifyListeners();
+  // }
 
   void validateName(String name) {
     if (name.isEmpty) {
@@ -125,6 +125,43 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  //login
+  String? loggedInUserId;
+
+  Future<void> login() async {
+    try {
+      setLoading(true);
+
+      final inEmail = loginEmailController.text.trim();
+
+      final query = await firestore
+          .collection('users')
+          .where('email', isEqualTo: inEmail)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) {
+        throw Exception('User not found');
+      }
+      loggedInUserId = query.docs.first.id;
+      notifyListeners();
+      clearAll();
+    } catch (e) {
+      debugPrint('Login error: $e');
+      rethrow;
+    } finally {
+      setLoading(false);
+    }
+  }
+  void logout() {
+    loggedInUserId = null;
+    loginEmailController.clear();
+    loading = false;
+    notifyListeners();
+  }
+
+
+
 
   void setLoading(bool value) {
     loading = value;
@@ -140,7 +177,9 @@ class AuthProvider extends ChangeNotifier {
     emailError = null;
     nameError = null;
     confirmPasswordError = null;
+    loginEmailController.clear();
     notifyListeners();
+
   }
 
   //fetching
