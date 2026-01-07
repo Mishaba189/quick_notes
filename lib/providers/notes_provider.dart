@@ -42,6 +42,47 @@ class NoteProvider extends ChangeNotifier{
 
   // fetch note
 
+  Stream<QuerySnapshot> fetchNotes(String uid){
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection('Notes')
+        .orderBy('createdAt' , descending: true)
+        .snapshots();
+  }
+
+  //delete note
+
+  Future<void>deleteNotes(String uid,String noteID) async{
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection('Notes')
+        .doc(noteID)
+        .delete();
+  }
+
+  //update note
+
+  Future<void>updateNote(String uid,String noteID,String title, String content)async{
+    final updatedAt = FieldValue.serverTimestamp();
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection('Notes')
+        .doc(noteID)
+        .update({
+      'title' : title,
+      'content' : content,
+      'updatedAt' : updatedAt
+    });
+  }
+
+
+  void clearControllers() {
+    titleController.clear();
+    contentController.clear();
+  }
 
 
 
