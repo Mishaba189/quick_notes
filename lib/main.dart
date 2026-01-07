@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quick_notes/details_screen.dart';
 import 'package:quick_notes/providers/auth_provider.dart';
+import 'package:quick_notes/providers/notes_provider.dart';
 import 'package:quick_notes/register_screen.dart';
 import 'package:quick_notes/splash_screen.dart';
 import 'package:quick_notes/update_screen.dart';
@@ -17,6 +18,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => NoteProvider()),
       ],
       child: const MyApp(),
     ),

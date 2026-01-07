@@ -153,13 +153,6 @@ class AuthProvider extends ChangeNotifier {
       setLoading(false);
     }
   }
-  void logout() {
-    loggedInUserId = null;
-    loginEmailController.clear();
-    loading = false;
-    notifyListeners();
-  }
-
 
 
 

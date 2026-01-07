@@ -33,11 +33,13 @@ class LoginScreen extends StatelessWidget {
             TextField(
               controller: log.loginEmailController,
               decoration: InputDecoration(
+                errorText: log.emailError,
                 labelText: 'Email',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
+              onChanged: log.checkEmail,
             ),
 
             const SizedBox(height: 24),
