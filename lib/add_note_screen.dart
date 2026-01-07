@@ -27,9 +27,10 @@ class AddNoteScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller:note.contentController,
-              maxLines: 5,
+              maxLines: 10,
               decoration: InputDecoration(
                 hintText: 'Write your note...',
                 border: OutlineInputBorder(

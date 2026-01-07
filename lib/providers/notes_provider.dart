@@ -78,6 +78,21 @@ class NoteProvider extends ChangeNotifier{
     });
   }
 
+  //editing disabling/enabling
+
+  bool isEditing = false;
+
+  void enableEditing() {
+    isEditing = true;
+    notifyListeners();
+  }
+
+  void disableEditing() {
+    isEditing = false;
+    notifyListeners();
+  }
+
+  //clear
 
   void clearControllers() {
     titleController.clear();

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quick_notes/providers/auth_provider.dart';
 import 'package:quick_notes/providers/notes_provider.dart';
-import 'package:quick_notes/update_note.dart';
+import 'package:quick_notes/note_screen.dart';
 
 
 class HomeScreen extends StatelessWidget {
@@ -51,32 +51,20 @@ class HomeScreen extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
-                  title: Text(note['title']),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 15, color: Colors.green),
-                        onPressed: () {
-                          not.titleController.text = note['title'];
-                          not.contentController.text = note['content'];
+                  onTap: (){
+                    not.titleController.text = note['title'];
+                    not.contentController.text = note['content'];
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => UpdateNote(noteId: note.id),
-                            ),
-                          );
-                        },
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NoteScreen(noteId:note.id),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, size: 15, color: Colors.red),
-                        onPressed: () {
-                          not.deleteNotes(uid!, note.id);
-                        },
-                      ),
-                    ],
-                  ),
+                    );
+                    not.disableEditing();
+
+                  },
+                  title: Text(note['title']),
                 ),
               );
             },
