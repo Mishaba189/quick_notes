@@ -6,8 +6,6 @@ import 'package:quick_notes/providers/auth_provider.dart';
 import 'package:quick_notes/providers/notes_provider.dart';
 import 'package:quick_notes/register_screen.dart';
 import 'package:quick_notes/splash_screen.dart';
-import 'package:quick_notes/note_screen.dart';
-import 'package:quick_notes/update_screen.dart';
 import 'add_note_screen.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
@@ -46,8 +44,6 @@ class MyApp extends StatelessWidget {
         '/home': (_) => const HomeScreen(),
         '/add': (_) => const AddNoteScreen(),
         '/details':(_) => const DetailsScreen(),
-        '/update':(_) => const UpdateScreen(),
-        // '/updateNote':(_) => const UpdateNote(),
       },
     );
   }

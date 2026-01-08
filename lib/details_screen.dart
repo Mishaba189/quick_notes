@@ -9,9 +9,9 @@ class DetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.of(context).size.height;
-    // Future.microtask(() {
-    //   context.read<AuthProvider>().fetchDetails();
-    // });
+    final users = context.read<AuthProvider>();
+
+
     return Scaffold(
         appBar: AppBar(
         leading: IconButton(onPressed: (){
@@ -30,20 +30,20 @@ class DetailsScreen extends StatelessWidget {
               height: h,
               child: Consumer<AuthProvider>(
                 builder: (context,authProvider,child) {
-                  if(authProvider.loading== true){
+                  if(users.loading== true){
                     return Center(child: CircularProgressIndicator());
                   }
-                  if(authProvider.details.isEmpty){
+                  if(users.details.isEmpty){
                      return Center(child: Text("No User Found",style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey,)));
                   }
                   return ListView.builder(
-                    itemCount: authProvider.details.length,
+                    itemCount: users.details.length,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemBuilder: (context,index){
-                      final detail = authProvider.details[index];
+                      final user = users.details[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Container(
@@ -52,12 +52,12 @@ class DetailsScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: ListTile(
-                            title: Text(detail.id),
+                            title: Text(user.id),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(detail.name),
-                                Text(detail.email),
+                                Text(user.name),
+                                Text(user.email),
                               ],
                             ),
                             trailing: Row(
@@ -65,8 +65,8 @@ class DetailsScreen extends StatelessWidget {
                               children: [
                                 TextButton(
                                   onPressed: () {
-                                    authProvider.setUserForUpdate(detail);
-                                    Navigator.pushNamed(context, '/update');
+                                    users.setUserForUpdate(user);
+                                    Navigator.pushNamed(context, '/register');
                                   },
                                   style: TextButton.styleFrom(backgroundColor: Colors.green),
                                   child: const Text('Edit', style: TextStyle(color: Colors.white)),
@@ -92,12 +92,8 @@ class DetailsScreen extends StatelessWidget {
                                             TextButton(
                                               style: TextButton.styleFrom(backgroundColor: Colors.red),
                                               onPressed: () {
-                                                authProvider.deleteUser(detail.id);
+                                                users.deleteUser(user.id);
                                                 Navigator.pop(context);
-                                                // If notifyListeners() triggers a rebuild before Navigator.pop() finishes, Flutter throw:
-                                                // setState() or markNeedsBuild() called during build  later if its break use listen:false
-                                                // Provider.of<AuthProvider>(context, listen: false)
-                                                //     .deleteUser(detail.id);
                                               },
                                               child: const Text('Delete',style: TextStyle(color: Colors.white),),
                                             ),
@@ -125,6 +121,7 @@ class DetailsScreen extends StatelessWidget {
       ),
         floatingActionButton: FloatingActionButton(
         onPressed: () {
+          users.clearEditing();
           Navigator.pushNamed(context, '/register');
         },
         child: const Icon(Icons.add),

@@ -76,56 +76,8 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // register
-
-  Future<void> register() async {
-    try {
-      setLoading(true);
-
-      final email = emailController.text.trim();
-      final name = nameController.text.trim();
-
-     //email
-      final query = await firestore
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .limit(1)
-          .get();
-
-      if (query.docs.isNotEmpty) {
-        throw Exception('Email already registered');
-      }
-
-      //  uid
-      final uid = DateTime.now().millisecondsSinceEpoch.toString();
-      final createdAt = Timestamp.now();
-
-
-      await firestore.collection('users').doc(uid).set({
-        'name': name,
-        'email': email,
-        'createdAt': createdAt,
-      });
-
-      final user = DetailsDoc(
-        id: uid,
-        name: name,
-        email: email,
-        createdAt: createdAt,
-      );
-
-      details.insert(0, user);
-      notifyListeners();
-
-      clearAll();
-    } catch (e) {
-      debugPrint('Register error: $e');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   //login
+
   String? loggedInUserId;
 
   Future<void> login() async {
@@ -154,12 +106,130 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-
+  //loading
 
   void setLoading(bool value) {
     loading = value;
     notifyListeners();
   }
+
+
+
+
+  //add
+
+  Future<void>addUser()async{
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final uid = DateTime.now().millisecondsSinceEpoch.toString();
+    final createdAt = FieldValue.serverTimestamp();
+    final updatedAt = FieldValue.serverTimestamp();
+
+    try {
+      setLoading(true);
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .set({
+        'name':name,
+        'email': email,
+        'createdAt': createdAt,
+        'updatedAt': updatedAt
+      });
+      nameController.clear();
+      emailController.clear();
+
+      notifyListeners();
+    }  catch (e) {
+      debugPrint('Error while registering: $e');
+    }finally {
+      setLoading(false);
+    }
+  }
+
+  //fetch user details
+
+  List<DetailsDoc> details = [];
+  Future<void>fetchUser()async{
+
+    try {
+      setLoading(true);
+      final snapshot = await firestore
+          .collection('users')
+          .orderBy('createdAt', descending: true)
+          .get();
+      details = snapshot.docs
+          .map((doc) => DetailsDoc.fromFirestore(doc))
+          .toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error while fetching:$e');
+    }finally{
+      setLoading(false);
+    }
+  }
+
+
+  // delete user
+
+  Future<void> deleteUser(String uid) async {
+    try {
+      setLoading(true);
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .delete();
+      details.removeWhere((user) => user.id == uid);
+      notifyListeners();
+
+    } catch (e) {
+      debugPrint('Error while deleting: $e');
+    } finally {
+      setLoading(false);
+
+    }
+  }
+
+  //update user
+
+  Future<void>updateUser(String uid,String name)async{
+    final updatedAt = FieldValue.serverTimestamp();
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .update({
+      'name':name,
+      'updatedAt':updatedAt
+    });
+  }
+
+  //editing disabling or enabling
+
+  bool isUpdating = false;
+
+  void enableEditing(){
+    isUpdating=true;
+    notifyListeners();
+  }
+  void disablingEditing(){
+    isUpdating= false;
+    notifyListeners();
+  }
+
+  //presetting
+
+
+  String? editingUserId;
+
+  void setUserForUpdate(DetailsDoc user) {
+    editingUserId = user.id;
+    nameController.text = user.name;
+    emailController.text = user.email;
+    enableEditing();
+  }
+
+  //clearing functions
+
 
   void clearAll() {
     nameController.clear();
@@ -175,70 +245,13 @@ class AuthProvider extends ChangeNotifier {
 
   }
 
-  //fetching
-  List<DetailsDoc> details = [];
-
-  Future<void> fetchDetails() async {
-
-    setLoading(true);
-    notifyListeners();
-
-    try {
-      final snapshot = await firestore
-          .collection('users')
-          .orderBy('createdAt', descending: true)
-          .get();
-
-
-
-      details = snapshot.docs
-          .map((doc) => DetailsDoc.fromFirestore(doc))
-          .toList();
-
-    } catch (e) {
-      debugPrint('error when fetching: $e');
-    }
-    setLoading(false);
-    notifyListeners();
-  }
-  //to delete the user
-  Future<void>deleteUser(String docID)async{
-    await firestore
-        .collection('users')
-        .doc(docID)
-        .delete();
-    details.removeWhere((item) => item.id == docID);
-    notifyListeners();
+  void clearEditing() {
+    editingUserId = null;
+    nameController.clear();
+    emailController.clear();
+    disablingEditing();
   }
 
-  String? editingUserId;
-  void setUserForUpdate(DetailsDoc user) {
-    editingUserId = user.id;
-    nameController.text = user.name;
-    emailController.text = user.email;
-    // passwordController.clear();
-    // confirmPasswordController.clear();
-  }
-
-//  update
-  Future<void> updateUser(String docID, String name, String password) async {
-    await firestore.collection('users').doc(docID).update({
-      'name': name,
-      // 'password': password,
-    });
-    final index = details.indexWhere((item) => item.id == docID);
-
-    if (index != -1) {
-      final old = details[index];
-      details[index] = DetailsDoc(
-        id: old.id,
-        name: name,
-        email: old.email,
-        createdAt: old.createdAt,
-      );
-    }
-    notifyListeners();
-  }
 
 
   @override
@@ -250,6 +263,8 @@ class AuthProvider extends ChangeNotifier {
     super.dispose();
   }
 }
+
+
 
 class DetailsDoc {
   final String id;
@@ -274,3 +289,5 @@ class DetailsDoc {
     );
   }
 }
+
+

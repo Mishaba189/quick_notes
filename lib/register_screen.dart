@@ -11,23 +11,46 @@ class RegisterScreen extends StatelessWidget {
     final disabled =
         reg.nameController.text.trim().isEmpty ||
             reg.emailController.text.trim().isEmpty ||
-            // reg.passwordController.text.trim().isEmpty ||
             reg.nameError != null ||
             reg.emailError != null ||
+            // reg.passwordController.text.trim().isEmpty ||
             // reg.passwordError != null ||
             // reg.confirmPasswordError != null ||
             reg.loading;
 
     return Scaffold(
+      appBar: reg.isUpdating ? AppBar(
+        leading:IconButton(
+              onPressed:(){
+                Navigator.pop(context);
+              },
+              icon: Icon(Icons.arrow_back)
+                 ) ,
+        // leading: reg.isUpdating
+        //     ? IconButton(
+        //     onPressed:(){
+        //       Navigator.pop(context);
+        //     },
+        //     icon: Icon(Icons.arrow_back)
+        //        )
+        //     :null
+
+      ): null,
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
+            reg.isUpdating
+                ? const Text(
+              'Update',
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            )
+                : const Text(
               'Create Account',
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 30),
 
             TextField(
@@ -49,6 +72,7 @@ class RegisterScreen extends StatelessWidget {
 
             TextField(
               controller: reg.emailController,
+              enabled: !reg.isUpdating,
               decoration: InputDecoration(
                 labelText: 'Email',
                 errorText: reg.emailError,
@@ -95,38 +119,44 @@ class RegisterScreen extends StatelessWidget {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: disabled
+                onPressed:disabled
                     ? null
                     : () async {
-                  try {
-                    await reg.register();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Registration successful')),
+                  if(reg.isUpdating && reg.editingUserId != null){
+                    await reg.updateUser(
+                        reg.editingUserId!, reg.nameController.text.trim()
                     );
-                    reg.fetchDetails();
-                    Navigator.pushNamed(context, '/details');
-                  } catch (_) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Registration failed')),
+                    reg.clearEditing();
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User updated'))
                     );
+                  }else{
+                    await reg.addUser();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Registration successful')),
+                        );
+
                   }
+
+                  await reg.fetchUser();
+                  Navigator.pushNamed(context, '/details');
                 },
                 child: reg.loading
-                    ? const Text('Registering...')
-                    : const Text('Register'),
+                    ? const Text('Please wait...')
+                    : Text(reg.isUpdating ? 'Update' : 'Register')
               ),
             ),
+            if (!reg.isUpdating)
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/login');
+                },
+                child: const Text('Already have an account? Login'),
+              ),
+            if(!reg.isUpdating)
             TextButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/login');
-              },
-              child: const Text('Already have an account? Login'),
-            ),
-            TextButton(
-              onPressed: () {
-                reg.fetchDetails();
+                reg.fetchUser();
                 Navigator.pushNamed(context, '/details');
               },
               child: const Text('Users'),
