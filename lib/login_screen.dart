@@ -41,6 +41,17 @@ class LoginScreen extends StatelessWidget {
               ),
               onChanged: log.checkEmail,
             ),
+            // const SizedBox(height: 16),
+            // TextField(
+            //   controller: log.passwordController,
+            //   obscureText: true,
+            //   decoration: InputDecoration(
+            //     labelText: 'Password',
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(12),
+            //     ),
+            //   ),
+            // ),
 
             const SizedBox(height: 24),
 

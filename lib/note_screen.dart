@@ -21,7 +21,7 @@ class NoteScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit'),
+        // title: const Text('Note'),
         actions: [
           TextButton(onPressed: (){
             upd.enableEditing();

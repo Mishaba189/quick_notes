@@ -104,7 +104,8 @@ class RegisterScreen extends StatelessWidget {
                       const SnackBar(
                           content: Text('Registration successful')),
                     );
-                    Navigator.pushNamed(context, '/home');
+                    reg.fetchDetails();
+                    Navigator.pushNamed(context, '/details');
                   } catch (_) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
