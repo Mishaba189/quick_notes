@@ -1,258 +1,253 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:quick_notes/services/auth_services.dart';
+import 'package:quick_notes/services/user_firestore_service.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final AuthServices auth = AuthServices();
+  final UserFirestoreServices firestore = UserFirestoreServices();
 
-  // controllers
-  final nameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
-  final loginEmailController = TextEditingController();
-  final loginNameController = TextEditingController();
+  bool isLoading = false;
 
-  String? passwordError;
-  String? emailError;
-  String? nameError;
-  String? confirmPasswordError;
-  bool loading = false;
+  final TextEditingController nameController= TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController logEmailController=TextEditingController();
+  final TextEditingController logPasswordController = TextEditingController();
 
-  // validation
+  String ? passwordError;
+  String ? confirmPasswordError;
+  bool isVisible1 =  false;
+  bool isVisible2 = false;
+  bool isVisible3 = false;
+  bool isEmailVerified = false;
+  bool isVerifying = false;
+  bool isPasswordResetting = false;
+  bool isResetEmailSent = false;
+  Timer ? verificationTimer;
 
-  void checkEmail(String email) {
-    if (email.isEmpty) {
-      emailError = 'Email is required';
-    } else if (!email.contains('@') || !email.contains('.')) {
-      emailError = 'Invalid email';
+
+
+
+
+  void checkPassword(String password){
+    if(password.isEmpty){
+      passwordError='Password is required';
+    } else if(password.length<8){
+      passwordError= 'Password must be greater than 8 characters';
+
     } else {
-      emailError = null;
+      passwordError= null;
     }
     notifyListeners();
   }
 
-  // void checkPassword(String password) {
-  //   if (password.isEmpty) {
-  //     passwordError = 'Password is required';
-  //   } else if (password.length < 8) {
-  //     passwordError = 'Password must be at least 8 characters';
-  //   } else {
-  //     passwordError = null;
-  //   }
-  //   notifyListeners();
-  // }
-  //
-  // void checkConfirmPassword(String confirmPassword) {
-  //   if (confirmPassword.isEmpty) {
-  //     confirmPasswordError = 'Please confirm your password';
-  //   } else if (confirmPassword != passwordController.text) {
-  //     confirmPasswordError = 'Passwords do not match';
-  //   } else {
-  //     confirmPasswordError = null;
-  //   }
-  //   notifyListeners();
-  // }
-
-  void validateName(String name) {
-    if (name.isEmpty) {
-      nameError = 'Name is required';
-    } else {
-      nameError = null;
+  void checkConfirmPass(String confirmPassword){
+    if(confirmPassword.isEmpty){
+      confirmPasswordError = 'Please confirm your password';
+    }else if(confirmPassword != passwordController.text){
+      confirmPasswordError = 'Passwords do not match!';
+    }else {
+      confirmPasswordError= null;
     }
     notifyListeners();
   }
 
-  Future<void> checkNameExists(String name) async {
-    final query = await firestore
-        .collection('users')
-        .where('name', isEqualTo: name)
-        .limit(1)
-        .get();
-
-    nameError = query.docs.isNotEmpty
-        ? 'Please write a different name'
-        : null;
-
+  void toggleVisibility1(){
+    isVisible1 = !isVisible1;
+    notifyListeners();
+  }
+  void toggleVisibility2(){
+    isVisible2=!isVisible2;
+    notifyListeners();
+  }
+  void toggleVisibility3(){
+    isVisible3=!isVisible3;
     notifyListeners();
   }
 
-  //login
+  AuthProvider() {
+    nameController.addListener(_onTextChanged);
+    emailController.addListener(_onTextChanged);
+    passwordController.addListener(_onTextChanged);
+    confirmPasswordController.addListener(_onTextChanged);
+    logEmailController.addListener(_onTextChanged);
+    logPasswordController.addListener(_onTextChanged);
+  }
 
-  String? loggedInUserId;
+  void _onTextChanged() {
+    notifyListeners();
+  }
 
-  Future<void> login() async {
+  void startEmailVerificationListener(){
+    verificationTimer?.cancel();
+    verificationTimer = Timer.periodic(
+        const Duration(seconds: 5),
+        (_)async{
+          final user= FirebaseAuth.instance.currentUser;
+          if(user==null) return;
+
+          await user.reload();
+          if(user.emailVerified){
+            isEmailVerified=true;
+            verificationTimer?.cancel();
+            notifyListeners();
+          }
+        }
+        );
+  }
+
+
+  //register
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    isEmailVerified = false;
+    verificationTimer?.cancel();
+
+
+    setLoading(true);
+    notifyListeners();
+
     try {
-      setLoading(true);
+      final user = await auth.register(email, password);
 
-      final inEmail = loginEmailController.text.trim();
-
-      final query = await firestore
-          .collection('users')
-          .where('email', isEqualTo: inEmail)
-          .limit(1)
-          .get();
-
-      if (query.docs.isEmpty) {
-        throw Exception('User not found');
+      if (user == null) {
+        throw Exception("User registration failed");
       }
-      loggedInUserId = query.docs.first.id;
-      notifyListeners();
-      clearAll();
+      debugPrint("USER UID: ${user.uid}");
     } catch (e) {
-      debugPrint('Login error: $e');
+      debugPrint("REGISTER ERROR: $e");
       rethrow;
     } finally {
       setLoading(false);
-    }
-  }
-
-  //loading
-
-  void setLoading(bool value) {
-    loading = value;
-    notifyListeners();
-  }
-
-
-
-
-  //add
-
-  Future<void>addUser()async{
-    final name = nameController.text.trim();
-    final email = emailController.text.trim();
-    final uid = DateTime.now().millisecondsSinceEpoch.toString();
-    final createdAt = FieldValue.serverTimestamp();
-    final updatedAt = FieldValue.serverTimestamp();
-
-    try {
-      setLoading(true);
-      await firestore
-          .collection('users')
-          .doc(uid)
-          .set({
-        'name':name,
-        'email': email,
-        'createdAt': createdAt,
-        'updatedAt': updatedAt
-      });
-      nameController.clear();
-      emailController.clear();
-
       notifyListeners();
-    }  catch (e) {
-      debugPrint('Error while registering: $e');
-    }finally {
-      setLoading(false);
-    }
-  }
-
-  //fetch user details
-
-  List<DetailsDoc> details = [];
-  Future<void>fetchUser()async{
-
-    try {
-      setLoading(true);
-      final snapshot = await firestore
-          .collection('users')
-          .orderBy('createdAt', descending: true)
-          .get();
-      details = snapshot.docs
-          .map((doc) => DetailsDoc.fromFirestore(doc))
-          .toList();
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error while fetching:$e');
-    }finally{
-      setLoading(false);
     }
   }
 
 
-  // delete user
 
-  Future<void> deleteUser(String uid) async {
+  //login
+  Future<void> login(String email, String password) async {
+    setLoading(true);
+
     try {
-      setLoading(true);
-      await firestore
-          .collection('users')
-          .doc(uid)
-          .delete();
-      details.removeWhere((user) => user.id == uid);
-      notifyListeners();
+      final user = await auth.login(email, password);
 
-    } catch (e) {
-      debugPrint('Error while deleting: $e');
+      if (user == null) {
+        throw Exception('Login failed');
+      }
+
+      await user.reload();
+
+      if (!user.emailVerified) {
+        await auth.logout();
+        throw Exception('Please verify your email before logging in');
+      }
+
+      final doc = await firestore.users.doc(user.uid).get();
+      if (!doc.exists) {
+        await firestore.createUser(
+          name: nameController.text.trim(),
+          email: user.email!,
+        );
+      }
+
+      clearAll();
     } finally {
       setLoading(false);
-
     }
   }
 
-  //update user
+  //logout
+  Future<void>logout()async{
+    await auth.logout();
+  }
 
-  Future<void>updateUser(String uid,String name)async{
-    final updatedAt = FieldValue.serverTimestamp();
-    return firestore
-        .collection('users')
-        .doc(uid)
-        .update({
+  Future<void>resetPassword(BuildContext context,String email)async{
+    if(email.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email')),
+      );
+      return;
+    }
+    try {
+      setLoading(true);
+      notifyListeners();
+
+      isResetEmailSent = true;
+
+      await auth.resetPassword(email);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset email sent. Check your inbox'),
+        ),
+      );
+    }  catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      setLoading(false);
+      notifyListeners();
+    }
+
+  }
+
+  //fetch
+  Stream get userStream => firestore.getUsers();
+  String? loggedUid = FirebaseAuth.instance.currentUser?.uid;
+
+  //update
+  Future<void>updateUser(String uid, String name,String email)async{
+    await firestore.updateUser(uid, {
       'name':name,
-      'updatedAt':updatedAt
+      'email':email,
     });
   }
 
-  //editing disabling or enabling
+  //delete
+  Future<void>deleteUser(String uid)async{
+    await firestore.deleteUser(uid);
+  }
 
-  bool isUpdating = false;
+  void setLoading(bool value) {
+  isLoading = value;
+  notifyListeners();
+  }
 
-  void enableEditing(){
-    isUpdating=true;
+  void enableResetting(){
+    isPasswordResetting = true;
+    isResetEmailSent =false;
+    logPasswordController.clear();
     notifyListeners();
   }
-  void disablingEditing(){
-    isUpdating= false;
+  void disableResetting(){
+    isPasswordResetting= false;
+    isResetEmailSent= false;
     notifyListeners();
   }
 
-  //presetting
 
 
-  String? editingUserId;
-
-  void setUserForUpdate(DetailsDoc user) {
-    editingUserId = user.id;
-    nameController.text = user.name;
-    emailController.text = user.email;
-    enableEditing();
-  }
-
-  //clearing functions
-
-
-  void clearAll() {
+  void clearAll(){
     nameController.clear();
     emailController.clear();
     passwordController.clear();
     confirmPasswordController.clear();
-    passwordError = null;
-    emailError = null;
-    nameError = null;
-    confirmPasswordError = null;
-    loginEmailController.clear();
+    logEmailController.clear();
+    logPasswordController.clear();
+    passwordError= null;
+    confirmPasswordError= null;
+    isEmailVerified=false;
+    isResetEmailSent= false;
     notifyListeners();
-
   }
-
-  void clearEditing() {
-    editingUserId = null;
-    nameController.clear();
-    emailController.clear();
-    disablingEditing();
-  }
-
-
 
   @override
   void dispose() {
@@ -260,34 +255,13 @@ class AuthProvider extends ChangeNotifier {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    logEmailController.dispose();
+    logPasswordController.dispose();
+    verificationTimer?.cancel();
     super.dispose();
   }
+
 }
 
-
-
-class DetailsDoc {
-  final String id;
-  final String name;
-  final String email;
-  final Timestamp createdAt;
-
-  DetailsDoc({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.createdAt
-  });
-  factory DetailsDoc.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-
-    return DetailsDoc(
-      id: doc.id,
-      name: data['name'],
-      email: data['email'],
-      createdAt: data['createdAt'],
-    );
-  }
-}
 
 

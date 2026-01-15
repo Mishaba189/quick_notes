@@ -17,7 +17,7 @@ class NoteScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final upd = context.watch<NoteProvider>();
     final auth = context.watch<AuthProvider>();
-    final uid = auth.loggedInUserId;
+    final uid = auth.loggedUid;
 
     return Scaffold(
       appBar: AppBar(

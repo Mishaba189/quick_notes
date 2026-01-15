@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quick_notes/providers/auth_provider.dart';
 import 'package:quick_notes/providers/notes_provider.dart';
-import 'package:quick_notes/note_screen.dart';
+import 'package:quick_notes/screens/note_screen.dart';
 
 
 class HomeScreen extends StatelessWidget {
@@ -13,7 +13,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final not = context.read<NoteProvider>();
-    final uid = auth.loggedInUserId;
+    final uid = auth.loggedUid;
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Notes'),

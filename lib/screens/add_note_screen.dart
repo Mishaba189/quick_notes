@@ -10,7 +10,7 @@ class AddNoteScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final note = context.watch<NoteProvider>();
     final auth = context.watch<AuthProvider>();
-    final uid = auth.loggedInUserId;
+    final uid = auth.loggedUid;
     return Scaffold(
       appBar: AppBar(title: const Text('Add Note')),
       body: Padding(
