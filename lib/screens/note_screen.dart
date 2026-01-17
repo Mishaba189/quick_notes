@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:quick_notes/providers/auth_provider.dart';
 import 'package:quick_notes/providers/notes_provider.dart';
 
-
-
 class NoteScreen extends StatelessWidget {
   final String noteId;
 
@@ -17,7 +15,7 @@ class NoteScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final upd = context.watch<NoteProvider>();
     final auth = context.watch<AuthProvider>();
-    final uid = auth.loggedUid;
+    final uid = auth.firestoreUserId;
 
     return Scaffold(
       appBar: AppBar(

@@ -5,17 +5,23 @@ class UserFirestoreServices {
   FirebaseFirestore.instance.collection('users');
 
 //add
-  Future<void> createUser({
+  Future<String> createUser({
+    required String authUid,
     required String name,
     required String email,
   }) async {
-    final String docId = DateTime.now().millisecondsSinceEpoch.toString();
+    final docId = DateTime.now().millisecondsSinceEpoch.toString();
+
     await users.doc(docId).set({
+      'authUid': authUid,
       'name': name,
       'email': email,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    return docId;
   }
+
 
 //fetch
   Stream<QuerySnapshot> getUsers() {

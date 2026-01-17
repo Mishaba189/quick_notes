@@ -57,7 +57,7 @@ class VerificationScreeen extends StatelessWidget {
                  TextButton(onPressed: (){
                    Navigator.pushNamed(context, '/login');
                  },
-                    child: Text('Login to Continue'))
+                    child: Text('Continue'))
             ],
           )
       ),

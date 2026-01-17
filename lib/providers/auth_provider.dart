@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:quick_notes/services/auth_services.dart';
@@ -8,6 +7,7 @@ import 'package:quick_notes/services/user_firestore_service.dart';
 class AuthProvider extends ChangeNotifier {
   final AuthServices auth = AuthServices();
   final UserFirestoreServices firestore = UserFirestoreServices();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool isLoading = false;
 
@@ -28,10 +28,8 @@ class AuthProvider extends ChangeNotifier {
   bool isPasswordResetting = false;
   bool isResetEmailSent = false;
   Timer ? verificationTimer;
-
-
-
-
+  String? firestoreUserId;
+  User ? _user;
 
   void checkPassword(String password){
     if(password.isEmpty){
@@ -76,7 +74,32 @@ class AuthProvider extends ChangeNotifier {
     confirmPasswordController.addListener(_onTextChanged);
     logEmailController.addListener(_onTextChanged);
     logPasswordController.addListener(_onTextChanged);
+
+
+    _auth.authStateChanges().listen((user) async {
+      _user = user;
+
+      if (user != null) {
+        final query = await firestore.users
+            .where('authUid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
+
+        if (query.docs.isNotEmpty) {
+          firestoreUserId = query.docs.first.id;
+        }
+      } else {
+        firestoreUserId = null;
+      }
+
+      notifyListeners();
+    });
+
   }
+
+  User? get user => _user;
+
+  bool get isLoggedIn => _user != null;
 
   void _onTextChanged() {
     notifyListeners();
@@ -132,6 +155,8 @@ class AuthProvider extends ChangeNotifier {
 
 
 
+
+
   //login
   Future<void> login(String email, String password) async {
     setLoading(true);
@@ -150,12 +175,19 @@ class AuthProvider extends ChangeNotifier {
         throw Exception('Please verify your email before logging in');
       }
 
-      final doc = await firestore.users.doc(user.uid).get();
-      if (!doc.exists) {
-        await firestore.createUser(
+      final query = await firestore.users
+          .where('authUid', isEqualTo: user.uid)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) {
+        firestoreUserId = await firestore.createUser(
+          authUid: user.uid,
           name: nameController.text.trim(),
           email: user.email!,
         );
+      } else {
+        firestoreUserId = query.docs.first.id;
       }
 
       clearAll();
@@ -164,9 +196,12 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+
   //logout
-  Future<void>logout()async{
+  Future<void> logout() async {
+    firestoreUserId = null;
     await auth.logout();
+    notifyListeners();
   }
 
   Future<void>resetPassword(BuildContext context,String email)async{
@@ -201,7 +236,7 @@ class AuthProvider extends ChangeNotifier {
 
   //fetch
   Stream get userStream => firestore.getUsers();
-  String? loggedUid = FirebaseAuth.instance.currentUser?.uid;
+  // String? loggedUid = FirebaseAuth.instance.currentUser?.uid;
 
   //update
   Future<void>updateUser(String uid, String name,String email)async{

@@ -13,7 +13,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final not = context.read<NoteProvider>();
-    final uid = auth.loggedUid;
+    final uid = auth.firestoreUserId;
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Notes'),
@@ -21,6 +21,7 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
+              auth.logout();
               Navigator.pushNamed(context, '/login');
             },
           )
