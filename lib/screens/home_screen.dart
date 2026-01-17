@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quick_notes/providers/auth_provider.dart';
@@ -12,20 +13,36 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final not = context.read<NoteProvider>();
+    final not = context.watch<NoteProvider>();
     final uid = auth.firestoreUserId;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Notes'),
+        leading: not.isSelecting ? IconButton(
+            onPressed: (){
+              not.clearSelection();
+            },
+            icon:Icon(Icons.arrow_back)): null,
+        title:  not.isSelecting
+            ? Text('${not.selectedNoteIds.length} selected')
+            : const Text('My Notes'),
         actions: [
-          IconButton(
+          not.isSelecting
+              ? IconButton(
+            onPressed: () {
+              not.deleteSelectedNotes(uid!);
+              not.clearSelection();
+            },
+            icon: const Icon(CupertinoIcons.delete,color: Colors.red,)
+          )
+              : IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
               auth.logout();
               Navigator.pushNamed(context, '/login');
             },
-          )
+          ),
         ],
+
         automaticallyImplyLeading: false,
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -50,9 +67,15 @@ class HomeScreen extends StatelessWidget {
               final note = notes[index];
 
               return Card(
+                color: not.selectedNoteIds.contains(note.id)
+                    ? Color(0x20FFCC9D)
+                    : null,
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
-                  onTap: (){
+                  onTap:(){
+                    if(not.isSelecting){
+                      not.toggleSelection(note.id);
+                    } else {
                     not.titleController.text = note['title'];
                     not.contentController.text = note['content'];
 
@@ -62,8 +85,11 @@ class HomeScreen extends StatelessWidget {
                         builder: (_) => NoteScreen(noteId:note.id),
                       ),
                     );
-                    not.disableEditing();
+                    not.disableEditing();}
 
+                  },
+                  onLongPress: (){
+                   not.toggleSelection(note.id);
                   },
                   title: Text(note['title']),
                 ),
@@ -73,7 +99,7 @@ class HomeScreen extends StatelessWidget {
         },
       ),
 
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton:not.isSelecting? null : FloatingActionButton(
         onPressed: () {
           not.clearControllers();
           Navigator.pushNamed(context, '/add');

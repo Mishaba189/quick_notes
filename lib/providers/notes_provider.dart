@@ -91,6 +91,47 @@ class NoteProvider extends ChangeNotifier{
     isEditing = false;
     notifyListeners();
   }
+  //home screen
+  final Set<String>selectedNoteIds={};
+
+
+  String? selectedNoteId;
+
+  bool get isSelecting => selectedNoteIds.isNotEmpty;
+
+  void selectNote(String noteId) {
+    selectedNoteIds.add(noteId);
+    notifyListeners();
+  }
+  void unselectNote(String noteId) {
+    selectedNoteIds.remove(noteId);
+    notifyListeners();
+  }
+
+  void toggleSelection(String noteId) {
+    if (selectedNoteIds.contains(noteId)) {
+      unselectNote(noteId);
+    } else {
+      selectNote(noteId);
+    }
+  }
+
+  void clearSelection() {
+    selectedNoteId = null;
+    notifyListeners();
+  }
+
+  Future<void> deleteSelectedNotes(String uid) async {
+    for (var id in selectedNoteIds) {
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('Notes')
+          .doc(id)
+          .delete();
+    }
+    clearSelection();
+  }
 
   //clear
 
